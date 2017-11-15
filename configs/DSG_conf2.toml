@@ -1,0 +1,174 @@
+# Data Stream Generator Configuration
+
+Id = "plant1"
+Description = "Data Stream Generator Configuration for simulated Plant 1"
+Type = "stream" # stream | generate
+BrokerHostName = "127.0.0.1"
+OutputFilePath = "C:\\Users\\P41608\\Desktop\\datastream.csv"
+DateTimeFormat = "yyyy-MM-dd-HH-mm-ss-fff"
+Seed = 42 # >= 0
+Duration = 1000000
+
+# Series
+
+# ambient
+# =====================================
+
+[[ARMA]]
+Id = "ambientClimate"
+Export = false
+Delay = 1000
+P = [0.15, 0.5, 0.01]
+Q = [0.34, 0.21, 0.13, 0.08, 0.05, 0.03, 0.02, 0.01]
+C = 0.0
+Mean = 0.0
+StdDev = 0.5
+
+[[ARMA]]
+Id = "ambientTemperature"
+Export = true
+Delay = 1000
+Rank = 1
+Topic = "r/ambient/temperature"
+Title = "Temperature (°C)"
+Interval = 500
+P = [0.35, 0.10, 0.05]
+Q = [0.30, 0.05]
+C = 8.0
+Mean = 0.0
+StdDev = 0.02
+OutlierRatio2s = 0.045
+OutlierRatio3s = 0.002
+    [[ARMA.Drivers]]
+    Id = "ambientClimate"
+    P = [0.00, 0.25, 0.15]
+    Q = [0.01, 0.05]
+
+
+[[ARMA]]
+Id = "ambientHumidity"
+Export = true
+Delay = 1000
+Rank = 2
+Topic = "r/ambient/humidity"
+Title = "Humidity (%)"
+Interval = 1000
+P = [0.15, 0.10, 0.05]
+Q = [0.20, 0.10]
+C = 28.5
+Mean = 0.0
+StdDev = 0.05
+OutlierRatio2s = 0.05
+OutlierRatio3s = 0.02
+    [[ARMA.Drivers]]
+    Id = "ambientClimate"
+    P = [0.00, 0.25, 0.15]
+    Q = [0.01, 0.05]
+
+
+[[ARMA]]
+Id = "ambientAtmophericPressure"
+Export = true
+Delay = 1000
+Rank = 3
+Topic = "r/ambient/atmosphericpressure"
+Title = "Atmospheric Pressure (hPa)"
+Interval = 1000
+P = [0.35, 0.20, 0.05]
+Q = [0.20, 0.15]
+C = 390.325
+Mean = 0.0
+StdDev = 0.01
+    [[ARMA.Drivers]]
+    Id = "ambientClimate"
+    P = [0.10, 0.05, 0.02]
+    Q = [0.15, 0.10]
+
+
+
+# plant
+# =====================================
+
+[[PF]] # better: TDF = Time Dependent Function
+Id = "plantCycle"
+Export = false
+Delay = 1000
+Interval = 1000
+C = 5.5
+Mean = 0.0
+StdDev = 0.05
+TimeQuotient = 5.0
+Arguments = ["t"]
+Expression = "10 * ( sin(t) + sin(2*t)/2 + sin(5*t)/7 )"
+
+
+[[ARMA]]
+Id = "plantJoint1"
+Export = true
+Delay = 1000
+Rank = 4
+Topic = "r/plant/joint1"
+Title = "Joint 1 (Nm)"
+Interval = 1000
+P = [0.10, 0.05, 0.02]
+Q = [0.20, 0.05]
+C = 200.0
+Mean = 2.0
+StdDev = 0.5
+OutlierRatio2s = 0.005
+OutlierRatio3s = 0.1
+    [[ARMA.Drivers]]
+    Id = "plantCycle"
+    P = [0.00, 0.35, 0.15, 0.10]
+
+
+[[ARMA]]
+Id = "plantJoint2"
+Export = true
+Delay = 1000
+Rank = 5
+Topic = "r/plant/joint2"
+Title = "Joint 2 (Nm)"
+Interval = 1000
+P = [0.15, 0.10, 0.05]
+Q = [0.20, 0.10]
+C = 350.0
+Mean = 5.0
+StdDev = 2.5
+OutlierRatio2s = 0.05
+OutlierRatio3s = 0.02
+    [[ARMA.Drivers]]
+    Id = "plantCycle"
+    P = [0.30, 0.25, 0.30]
+
+
+[[ARMA]]
+Id = "plantInnerPressure1"
+Export = true
+Delay = 1000
+Rank = 6
+Topic = "r/plant/pressure1"
+Title = "Inner Pressure 1 (bar)"
+Interval = 1000
+P = [0.25, 0.10, 0.05]
+Q = [0.20, 0.15]
+C = 45.0
+Mean = 0.0
+StdDev = 1.25
+OutlierRatio2s = 0.05
+OutlierRatio3s = 0.02
+    [[ARMA.Drivers]]
+    Id = "plantCycle"
+    P = [-0.20, -0.05, -0.02]
+    [[ARMA.Drivers]]
+    Id = "ambientHumidity"
+    Q = [0.00, 0.00, -0.20, -0.15]
+
+# [[CF]]
+# Id = "firstCustomFunction"
+# Export = false
+# Delay = 1000
+# Rank = 7
+# Interval = 1000
+# Arguments = ["ambientClimate", "ambientClimate_1", "ambientClimate_2", "plantCycle"]
+# Expression = ""
