@@ -1,0 +1,31 @@
+# Data Stream Generator Configuration
+# ===================================
+
+Id = "plantX"
+Description = "DataStreamGenerator configuration for simulated sensors on a plant"
+Environment = "DEVELOPMENT" # DEVELOPMENT, PRODUCTION
+Seed = -1 # >= 0 means fixed seed
+Shuffle = false # shuffle order of series generation every iteration, otherwise use rank
+Interval = 100 # check interval in ms
+DateTimeFormat = "yyyy-MM-dd-HH-mm-ss-fff"
+StartDateTime = "1000-01-01-00-00-00-000"
+DecimalPrecision = 4
+Duration = 500000 # 500 seconds
+Type = "stream1"
+BrokerHostName = "127.0.0.1"
+
+
+
+# Series Configuration
+# ===================================
+
+[[XF]] # eXternal File based series
+Id = "s1"
+Rank = 1
+Export = true
+Delay = 100
+Interval = 1000
+Topic = "raw/plantx/s1"
+Title = "s1"
+SourcePath = "C:\\<...>\\datasettoreplay.csv" # modify path
+SourceIndex = ",0"

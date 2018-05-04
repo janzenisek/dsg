@@ -1,0 +1,34 @@
+# Data Stream Generator Configuration
+# ===================================
+
+Id = "plantA"
+Description = "DataStreamGenerator configuration for simulated sensors on plant A"
+Environment = "DEVELOPMENT" # DEVELOPMENT, PRODUCTION
+Seed = -1 # >= 0 means fixed seed
+Shuffle = false # shuffle order of series generation every iteration, otherwise use rank
+Interval = 100 # check interval in ms
+DateTimeFormat = "yyyy-MM-dd-HH-mm-ss-fff"
+StartDateTime = "1000-01-01-00-00-00-000"
+DecimalPrecision = 4
+Duration = 500000 # 500 seconds
+Type = "stream1"
+BrokerHostName = "127.0.0.1"
+
+
+
+# Series Configuration
+# ===================================
+
+[[ARMA]] # Auto Regressive Moving Average series
+Id = "s1"
+Rank = 1
+Export = true
+Delay = 100
+Interval = 1000
+Topic = "raw/planta/s1"
+Title = "s1"
+P = [0.1, 0.05, 0.01]
+Q = [0.02, 0.01]
+C = 5.0
+Mean = 0.0
+StdDev = 0.2
