@@ -6,6 +6,7 @@ using MQTTnet.Extensions.ManagedClient;
 using System;
 using System.Diagnostics;
 using System.Text;
+using org.mariuszgromada.math.mxparser;
 
 namespace DSG {
   public class Program {
@@ -37,6 +38,8 @@ namespace DSG {
       else {
         Console.WriteLine($"Error: no arguments provided.");
       }
+
+      License.iConfirmNonCommercialUse("anonymous");
 
       // parse configuration toml file
       GeneratorConfig generatorConfig = null;
