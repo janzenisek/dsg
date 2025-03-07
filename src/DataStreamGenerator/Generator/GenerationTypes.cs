@@ -15,8 +15,9 @@ namespace DSG {
     public List<double> D { get; set; } // derivatives (ARIMA)
     public List<double> S { get; set; } // stored values (XF, XG)
 
-    public DoubleSeries() {
+    public DoubleSeries(double init) {
       X = new List<double>();
+      X.Add(init);
       E = new List<double>();
       D = new List<double>();
       S = new List<double>();
@@ -30,6 +31,7 @@ namespace DSG {
     public int rank;
     public string title;
     public string timestamp;
+    public string systemTimestamp;
     public double value;
   }
 

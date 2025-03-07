@@ -4,12 +4,11 @@ using MQTTnet;
 using MQTTnet.Client;
 using MQTTnet.Extensions.ManagedClient;
 using org.mariuszgromada.math.mxparser;
-using System.Globalization;
 using System.Text;
 using System.Text.Json;
 
 namespace DSG {
-  public class DoubleSeriesGenerator {
+  public class DoubleSeriesGeneratorDepr : Generator {
 
     public const double MAX_BUFFER_SIZE = 500;
     public const string ID_TIMEELAPSED = "t";
@@ -17,18 +16,14 @@ namespace DSG {
     public const string ID_EVENTITERATOR = "i";
     public const char TIMELAG_SEPARATOR = '_';
     public const char CSV_SEPARATOR = ';';
-    public CultureInfo provider;
-    public CancellationTokenSource cts;
-
 
     private DoubleSeries series;
     public SeriesConfig config;
     private Dictionary<string, DoubleSeries> seriesDict;
-    private Dictionary<string, SeriesConfig> configDict;
 
     private GeneratorConfig generatorConfig;
-    private IManagedMqttClient client;
     private Random rnd;
+    private IManagedMqttClient client;
 
     private DateTime time;
     public DateTime Time {
@@ -48,25 +43,19 @@ namespace DSG {
     private bool driversActive;
     private bool initialized;
 
-    public DoubleSeriesGenerator(GeneratorConfig generatorConfig, Dictionary<string, DoubleSeries> seriesDict, DoubleSeries series, SeriesConfig config, Dictionary<string, SeriesConfig> configDict) {
-      provider = CultureInfo.InvariantCulture;
+    public DoubleSeriesGeneratorDepr(GeneratorConfig generatorConfig, Dictionary<string, DoubleSeries> seriesDict, DoubleSeries series, SeriesConfig config) {
       initialized = false;
-      cts = new CancellationTokenSource();
 
       this.generatorConfig = generatorConfig;
       this.rnd = generatorConfig.Rnd;
       this.seriesDict = seriesDict;
       this.series = series;
       this.config = config;
-      this.configDict = configDict;
-      this.count = series.X.Count;
-      this.iter = series.X.Count;
-      //this.count = 0;
-      //this.iter = 0;
+      this.count = 0;
+      this.iter = 0;
 
       WarmUp();
     }
-
 
     public void WarmUp() {
       dynamic c = config;
@@ -74,14 +63,13 @@ namespace DSG {
       for (int i = 0; i < config.Delay; i++) {
         GenerateSeriesNextValue();
       }
-      SetTimeAndCount(generatorConfig.StartDateTime, 1);
+      SetTimeAndCount(generatorConfig.StartDateTime, 0);
       driversActive = true;
     }
 
     public void TearDown() {
-      if (client != null) {        
-        client.StopAsync().Wait(cts.Token);
-        cts.Cancel();
+      if (client != null) {
+        client.StopAsync().Wait();
         client.Dispose();
         client = null;
       }
@@ -110,19 +98,22 @@ namespace DSG {
 
         double outlierCandidate = rnd.NextDouble();
         if (outlierCandidate < c.OutlierRatio2s) {
-          xt = GenerateOutlier(rnd, xt, series.X, 3);
+          xt = GenerateOutlier(rnd, xt, series.X, 2);
         }
         else if (outlierCandidate < c.OutlierRatio1s) {
-          xt = GenerateOutlier(rnd, xt, series.X, 2);
+          xt = GenerateOutlier(rnd, xt, series.X, 1);
         }
 
         string timestamp = time.ToString(generatorConfig.DateTimeFormat);
         string msg = JsonSerializer.Serialize(GenerateMessage(c, generatorConfig.Group, timestamp, xt));
+
         var message = new MqttApplicationMessageBuilder()
           .WithTopic(config.Topic)
           .WithPayload(Encoding.UTF8.GetBytes(msg))
           .Build();
-        var task = job.Client.EnqueueAsync(message);        
+        var task = job.Client.EnqueueAsync(message);
+        //task.Wait(); 
+
         Thread.Sleep(config.Interval);
 
         // increase count and time
@@ -137,6 +128,7 @@ namespace DSG {
       double value = GenerateSeriesNextValue();
 
       string timestamp = time.ToString(generatorConfig.DateTimeFormat);
+
       return JsonSerializer.Serialize(GenerateMessage(config, generatorConfig.Group, timestamp, value));
     }
 
@@ -148,7 +140,6 @@ namespace DSG {
         rank = c.Rank,
         title = c.Title,
         timestamp = _timestamp,
-        systemTimestamp = DateTime.Now.ToString(generatorConfig.DateTimeFormat, provider),
         value = _value
       };
     }
@@ -164,10 +155,10 @@ namespace DSG {
         // calculate possible outlier
         double outlierCandidate = rnd.NextDouble();
         if (outlierCandidate < c.OutlierRatio2s) {
-          xt = GenerateOutlier(rnd, xt, series.X, 3);
+          xt = GenerateOutlier(rnd, xt, series.X, 2);
         }
         else if (outlierCandidate < c.OutlierRatio1s) {
-          xt = GenerateOutlier(rnd, xt, series.X, 2);
+          xt = GenerateOutlier(rnd, xt, series.X, 1);
         }
 
         // increase iterator, count and time
@@ -272,7 +263,7 @@ namespace DSG {
         s.D.Add(dt);
       }
 
-      // I
+      // I      
       var i_part = ComputeIntegral(s.D.TakeLast(c.I + 1).ToList());
 
       // Drivers
@@ -474,12 +465,17 @@ namespace DSG {
 
         client.ApplicationMessageReceivedAsync += Client_ApplicationMessageReceivedAsync;
 
+        //client = new MqttClient(c.SourceBroker);
+        //client.Connect(Guid.NewGuid().ToString());
+        //client.Subscribe(new string[] { c.SourceTopic }, new byte[] { MqttMsgBase.QOS_LEVEL_AT_LEAST_ONCE });
+        //client.MqttMsgPublishReceived += Client_MqttMsgPublishReceived;
       }
 
       double xt = 0.0;
       if (series.X.Count > 0) xt = series.X[series.X.Count - 1];
       return xt;
     }
+
     private Task Client_ApplicationMessageReceivedAsync(MqttApplicationMessageReceivedEventArgs arg) {
       return Task.Factory.StartNew(() =>
       {
@@ -520,12 +516,6 @@ namespace DSG {
       }
       else if (seriesDict.ContainsKey(id) && seriesDict[id].X.Count > 0) {
         var seq = seriesDict[id].X;
-
-
-        var seqRank = configDict[id].Rank;
-        var seqInterval = configDict[id].Interval;
-        if (config.Interval == seqInterval && config.Rank > seqRank) timelag++;
-
         int idx = seq.Count - 1 - timelag;
         idx = (idx >= 0) ? idx : 0;
         return (seq.Count - 1 >= idx) ? seq.ElementAt(idx) : 0;
@@ -537,11 +527,11 @@ namespace DSG {
 
     private double GenerateOutlier(Random rnd, double xt, List<double> series, double f1) {
       double outlier = xt;
-      double stdDev = ComputeStdDev(series.TakeLast(5).ToList());
+      double stdDev = ComputeStdDev(series);
       bool up = series[series.Count - 1] - series[series.Count - 2] >= 0;
       //bool up = rnd.NextDouble() >= 0.5;
 
-      double off = f1 * stdDev + Math.Abs(rnd.NextGaussian_BoxMuller(0.0, stdDev));
+      double off = f1 * stdDev + Math.Abs(rnd.NextGaussian_BoxMuller(0.0, stdDev / 2.0));
       if (up) outlier += off;
       else outlier -= off;
 
@@ -681,6 +671,5 @@ namespace DSG {
       return fa + fb / 2.0;
     }
     #endregion general helper
-
   }
 }

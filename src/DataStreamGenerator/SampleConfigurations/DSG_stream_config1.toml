@@ -13,6 +13,7 @@ DecimalPrecision = 4
 Duration = 500000 # 500 seconds
 Type = "stream1" # stream1 = use single thread for computation of all series, stream2 = use 1 task per series defined below
 BrokerHostName = "127.0.0.1" # using standard MQTT ports 1883 & 8883
+BrokerHostPort = 1883
 
 
 

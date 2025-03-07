@@ -13,6 +13,7 @@ DecimalPrecision = 4
 Duration = 500000 # 500 seconds
 Type = "stream1"
 BrokerHostName = "127.0.0.1"
+BrokerHostPort = 1883
 
 
 

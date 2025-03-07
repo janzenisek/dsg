@@ -14,17 +14,25 @@ namespace DSG.Configuration {
     public int Duration { get; set; }
     public string Type { get; set; }
     public bool Shuffle { get; set; }
+    public bool Disclosure { get; set; }
 
     public string BrokerHostName { get; set; }
+    public int BrokerHostPort { get; set; }
     public string OutputFilePath { get; set; }
     public string Separator { get; set; }
     public bool ExportIdAsHeader { get; set; }
     public bool ExportDateTime { get; set; }
     public bool ExportEventCount { get; set; }
+    public bool ExportDiff { get; set; }
+    public bool ExportDiffFPS { get; set; }
+    public bool ExportMovingAvg { get; set; }
+    public int ExportMovingAvgWindowSize { get; set; }
+    public int ExportLagOffset { get; set; }
     public int[] ExportLags { get; set; }
 
     public Random Rnd { get; set; }
     public string Group { get; set; }
+    public Dictionary<string, List<string>> Genealogy;
   }
 
   public class DriverConfig {
@@ -43,6 +51,8 @@ namespace DSG.Configuration {
     public int Interval { get; set; }
     public double OutlierRatio1s { get; set; }
     public double OutlierRatio2s { get; set; }
+
+    public double InitialValue { get; set; }
   }
 
   public class ARSeriesConfig : SeriesConfig {

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "DataStreamGenerator": {
+      "commandName": "Project",
+      "commandLineArgs": "..\\..\\..\\SampleConfigurations\\DSG_generate_config1.toml"
+    }
+  }
+}

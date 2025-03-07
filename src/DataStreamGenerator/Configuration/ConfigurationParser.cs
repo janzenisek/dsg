@@ -6,7 +6,7 @@ namespace DSG.Configuration {
 
   public class ConfigurationParser {
 
-    public static DateTime DETAULT_DATETIME = new DateTime(1, 1, 1, 0, 0, 0, 0);
+    public static DateTime DEFAULT_DATETIME = new DateTime(1, 1, 1, 0, 0, 0, 0);
     public const string ENV_DEVELOPMENT = "DEVELOPMENT";
     public const string ENV_PRODUCTION = "PRODUCTION";
 
@@ -21,19 +21,29 @@ namespace DSG.Configuration {
       gConfig.Description = config.ContainsKey("Description") ? config.Get<String>("Description") : null;
       gConfig.Environment = config.ContainsKey("Environment") ? config.Get<String>("Environment") : ENV_DEVELOPMENT;
       gConfig.DateTimeFormat = config.ContainsKey("DateTimeFormat") ? config.Get<String>("DateTimeFormat") : null;
-      gConfig.StartDateTime = config.ContainsKey("StartDateTime") ? ParseDateTime(config.Get<String>("StartDateTime"), gConfig.DateTimeFormat) : DETAULT_DATETIME;
+      gConfig.StartDateTime = config.ContainsKey("StartDateTime") ? ParseDateTime(config.Get<String>("StartDateTime"), gConfig.DateTimeFormat) : DEFAULT_DATETIME;
       gConfig.Seed = config.ContainsKey("Seed") ? config.Get<int>("Seed") : -1;
-      gConfig.Shuffle = config.ContainsKey("Shuffle") ? config.Get<bool>("Shuffle") : false;
       gConfig.Interval = config.ContainsKey("Interval") ? config.Get<int>("Interval") : -1;
       gConfig.DecimalPrecision = config.ContainsKey("DecimalPrecision") ? config.Get<int>("DecimalPrecision") : -1;
       gConfig.Duration = config.ContainsKey("Duration") ? config.Get<int>("Duration") : -1;
+      gConfig.Shuffle = config.ContainsKey("Shuffle") ? config.Get<bool>("Shuffle") : false;
+      gConfig.Disclosure = config.ContainsKey("Disclosure") ? config.Get<bool>("Disclosure") : false;
+
       gConfig.BrokerHostName = config.ContainsKey("BrokerHostName") ? config.Get<String>("BrokerHostName") : null;
+      gConfig.BrokerHostPort = config.ContainsKey("BrokerHostPort") ? config.Get<int>("BrokerHostPort") : -1;
       gConfig.OutputFilePath = config.ContainsKey("OutputFilePath") ? config.Get<String>("OutputFilePath") : null;
       gConfig.Separator = config.ContainsKey("Separator") ? config.Get<String>("Separator") : null;
       gConfig.ExportIdAsHeader = config.ContainsKey("ExportIdAsHeader") ? config.Get<bool>("ExportIdAsHeader") : true;
       gConfig.ExportDateTime = config.ContainsKey("ExportDateTime") ? config.Get<bool>("ExportDateTime") : true;
       gConfig.ExportEventCount = config.ContainsKey("ExportEventCount") ? config.Get<bool>("ExportEventCount") : true;
+      gConfig.ExportDiff = config.ContainsKey("ExportDiff") ? config.Get<bool>("ExportDiff") : false;
+      gConfig.ExportDiffFPS = config.ContainsKey("ExportDiffFPS") ? config.Get<bool>("ExportDiffFPS") : false;
+      gConfig.ExportMovingAvg = config.ContainsKey("ExportMovingAvg") ? config.Get<bool>("ExportMovingAvg") : false;
+      gConfig.ExportMovingAvgWindowSize = config.ContainsKey("ExportMovingAvgWindowSize") ? config.Get<int>("ExportMovingAvgWindowSize") : 0;
+      gConfig.ExportLagOffset = config.ContainsKey("ExportLagOffset") ? config.Get<int>("ExportLagOffset") : 0;
       gConfig.ExportLags = config.ContainsKey("ExportLags") ? config.Get<int[]>("ExportLags") : null;
+
+      gConfig.OutputFilePath = Path.GetFullPath(gConfig.OutputFilePath);
 
       if (gConfig.Seed >= 0) gConfig.Rnd = new Random(gConfig.Seed);
       else gConfig.Rnd = new Random();

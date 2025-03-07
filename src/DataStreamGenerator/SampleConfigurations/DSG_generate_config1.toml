@@ -12,7 +12,7 @@ StartDateTime = "1000-01-01-00-00-00-000"
 DecimalPrecision = 4 # precision of produced double values
 Duration = 500000 # 500 seconds
 Type = "generate1" # generate1 = datetime based computation (interval & delay in milliseconds), generate2 = event count based computation
-OutputFilePath = "C:\\<...>\\generateddataset.csv" # modify path
+OutputFilePath = "..\\..\\..\\generateddataset.csv" # modify path
 Separator = ";" # csv separator
 ExportIdAsHeader = true
 ExportDateTime = true
