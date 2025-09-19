@@ -69,6 +69,7 @@ namespace DSG.Configuration {
       var memcSeries = config.ContainsKey("MEMC") ? config.Get<List<MEMCSeriesConfig>>("MEMC") : new List<MEMCSeriesConfig>();
       var xfSeries = config.ContainsKey("XF") ? config.Get<List<XFSeriesConfig>>("XF") : new List<XFSeriesConfig>();
       var xgSeries = config.ContainsKey("XG") ? config.Get<List<XGSeriesConfig>>("XG") : new List<XGSeriesConfig>();
+      var isSeries = config.ContainsKey("IS") ? config.Get<List<IntSeqSeriesConfig>>("IS") : new List<IntSeqSeriesConfig>();
 
       var seriesConfigs = new Dictionary<string, SeriesConfig>();
 
@@ -103,6 +104,8 @@ namespace DSG.Configuration {
       foreach (var item in xgSeries) {
         seriesConfigs.Add(item.Id, item);
       }
+
+      isSeries.ForEach(x => seriesConfigs.Add(x.Id, x));
 
       return seriesConfigs;
     }

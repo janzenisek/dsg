@@ -1,4 +1,5 @@
 ﻿using org.mariuszgromada.math.mxparser;
+using System.ComponentModel.DataAnnotations;
 
 namespace DSG.Configuration {
 
@@ -171,5 +172,13 @@ namespace DSG.Configuration {
   public class XGSeriesConfig : SeriesConfig {
     public string SourceBroker { get; set; }
     public string SourceTopic { get; set; }
+  }
+
+  public class IntSeqSeriesConfig : SeriesConfig { 
+    public int Min { get; set; }
+    public int Max { get; set; }
+    public int MinLength { get; set; }
+    public int MaxLength { get; set; }
+    public string Strategy { get; set; }
   }
 }

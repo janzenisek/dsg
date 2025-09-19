@@ -17,10 +17,20 @@ namespace DSG {
 
     public DoubleSeries(double init) {
       X = new List<double>();
-      X.Add(init);
+      if(init != double.NaN) X.Add(init);      
       E = new List<double>();
       D = new List<double>();
       S = new List<double>();
+    }
+  }
+
+  public class IntSeries {
+    public List<int> X { get; set; }
+    public List<int> S { get; set; }
+
+    public IntSeries() {
+      X = new List<int>();
+      S = new List<int>();
     }
   }
 

@@ -480,6 +480,37 @@ namespace DSG {
       if (series.X.Count > 0) xt = series.X[series.X.Count - 1];
       return xt;
     }
+
+    private double ComputeNextX(Random rnd, DoubleSeries s, IntSeqSeriesConfig c) {
+      double xt = double.NaN;
+
+      int i = 0;
+      int x_Count = s.X.Count;
+      double cur = double.NaN;
+
+      // determine current sequence length i
+      for(; i < s.X.Count; i++) {
+        var next = s.X[x_Count - 1 - i];
+        if (double.IsNaN(cur)) cur = next;
+        else if (cur == next) continue;
+        else break;
+      }
+
+      if (double.IsNaN(cur)) xt = rnd.Next(c.Min, c.Max + 1);
+      else if (i < c.MinLength) xt = cur;
+      else if (i == c.MaxLength) do { xt = rnd.Next(c.Min, c.Max + 1); } while (xt == cur);
+      else if (i < c.MaxLength && rnd.NextDouble() < 0.3) do { xt = rnd.Next(c.Min, c.Max + 1); } while (xt == cur);
+      else xt = cur;
+
+        lock (seriesDict) {
+          if (s.X.Count >= MAX_BUFFER_SIZE)
+            s.X.RemoveAt(0);
+          s.X.Add(xt);
+        }
+
+      return xt;
+    }
+
     private Task Client_ApplicationMessageReceivedAsync(MqttApplicationMessageReceivedEventArgs arg) {
       return Task.Factory.StartNew(() =>
       {
@@ -524,7 +555,7 @@ namespace DSG {
 
         var seqRank = configDict[id].Rank;
         var seqInterval = configDict[id].Interval;
-        if (config.Interval == seqInterval && config.Rank > seqRank) timelag++;
+        //if (config.Interval == seqInterval && config.Rank > seqRank) timelag++; // TODO
 
         int idx = seq.Count - 1 - timelag;
         idx = (idx >= 0) ? idx : 0;

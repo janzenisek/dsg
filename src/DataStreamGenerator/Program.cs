@@ -1,12 +1,12 @@
 ﻿using DSG.Configuration;
 using DSG.Utils;
 using MQTTnet;
-using MQTTnet.Client;
 using MQTTnet.Extensions.ManagedClient;
-using System;
+using MQTTnet.Protocol;
 using System.Diagnostics;
 using System.Text;
 using org.mariuszgromada.math.mxparser;
+using MQTTnet.Client;
 
 namespace DSG {
   public class Program {
@@ -79,6 +79,7 @@ namespace DSG {
           || sc.Value.GetType() == typeof(MECSeriesConfig)
           || sc.Value.GetType() == typeof(MEMCSeriesConfig)
           || sc.Value.GetType() == typeof(XFSeriesConfig)
+          || sc.Value.GetType() == typeof(IntSeqSeriesConfig)
           || (sc.Value.GetType() == typeof(XGSeriesConfig) // only supported if streaming
               && (gType == TYPE_STREAM_DATETIMEBASED_SINGLETHREADED
                   || gType == TYPE_STREAM_DATETIMEBASED_MULTITASKED))) {
