@@ -12,7 +12,7 @@ StartDateTime = "1000-01-01-00-00-00-000"
 DecimalPrecision = 4 # precision of produced double values
 Duration = 500000 # 500 seconds
 Type = "generate1" # generate1 = datetime based computation (interval & delay in milliseconds), generate2 = event count based computation
-OutputFilePath = "..\\..\\..\\generateddataset.csv" # modify path
+OutputFilePath = "C:\\Users\\P41608\\Desktop\\generateddataset.csv" # modify path
 Separator = ";" # csv separator
 ExportIdAsHeader = true
 ExportDateTime = true
@@ -35,19 +35,6 @@ Mean = 0.0 # additive noise term
 StdDev = 0.05 # cf. noise term
 Arguments = ["i"] # i = continous iterator variable (inclusive delay)
 Expression = "4 * ( sin(i/5.0) + sin(2*i/5.0)/2 + sin(5*i/5.0)/7 )" # function body of s1(i)
-
-[[ME]] # Mathematical Expression
-Id = "sX"
-Export = true
-Rank = 10
-Delay = 100 # length of "burn-in" phase
-Title = "sX"
-Interval = 1000
-C = 15.0 # additive constant term
-Mean = 0.0 # additive noise term
-StdDev = 0.05 # cf. noise term
-Arguments = ["i", "s1", "s2", "s3"] # i = continous iterator variable (inclusive delay)
-Expression = "s1 * sin(s2/4.0) - s3" # function body of s1(i)
 
 [[AR]] # Auto Regressive series
 Id = "s2"

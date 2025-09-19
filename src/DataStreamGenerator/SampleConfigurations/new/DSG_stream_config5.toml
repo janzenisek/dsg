@@ -1,0 +1,354 @@
+# Data Stream Generator Configuration
+# ===================================
+
+Id = "plantX"
+Description = "DataStreamGenerator configuration for simulated sensors on a plant"
+Environment = "DEVELOPMENT" # DEVELOPMENT, PRODUCTION
+Seed = -1 # >= 0 means fixed seed
+Shuffle = false # shuffle order of series generation every iteration, otherwise use rank
+Interval = 1000 # check interval in ms
+DateTimeFormat = "yyyy-MM-dd-HH-mm-ss-fff"
+StartDateTime = "1000-01-01-00-00-00-000"
+DecimalPrecision = 4
+Duration = 10000000 # 10000 seconds
+Type = "stream1" # stream1 = use single thread for computation of all series, stream2 = use 1 task per series defined below
+BrokerHostName = "127.0.0.1" # using standard MQTT ports 1883 & 8883
+Disclosure = true
+
+
+
+# Series Configuration
+# ===================================
+
+[[ME]] # Mathematical Expression
+Id = "s1"
+Export = true
+Rank = 1
+Delay = 100
+Title = "s1"
+Interval = 1000
+Topic = "raw/m1/s1"
+C = 15.0
+Mean = 0.0
+StdDev = 0.05
+Arguments = ["i"] # i = continous iterator variable (delay included)
+Expression = "4 * ( sin(i/5.0) + sin(2*i/5.0)/2 + sin(5*i/5.0)/7 )"
+
+[[ARMA]] # Auto Regressive Moving Average series
+Id = "s2"
+Rank = 2
+Export = true
+Delay = 100
+Interval = 1000
+Topic = "raw/m1/s2"
+Title = "s2"
+P = [0.1, 0.05, 0.01]
+Q = [0.02, 0.01]
+C = 5.0
+Mean = 0.0
+StdDev = 0.2
+OutlierRatio1s = 0.05
+    [[ARMA.Drivers]]
+    Id = "s1"
+    P = [0.5, 0.35]
+
+[[ARMA]] # Auto Regressive Moving Average series
+Id = "s3"
+Rank = 3
+Export = true
+Delay = 100
+Interval = 1000
+Topic = "raw/m1/s3"
+Title = "s3"
+P = [0.1, 0.05, 0.01]
+Q = [0.02, 0.01]
+C = 5.0
+Mean = 0.0
+StdDev = 0.2
+OutlierRatio2s = 0.05
+    [[ARMA.Drivers]]
+    Id = "s1"
+    P = [0.5, 0.25, -0.15]
+
+
+[[ME]] # Mathematical Expression
+Id = "s4"
+Export = true
+Rank = 4
+Delay = 100
+Title = "s4"
+Topic = "raw/m1/s4"
+Interval = 1000
+C = 5.0
+Mean = 0.0
+StdDev = 0.2
+Arguments = ["s2", "s3"] # i = continous iterator variable (inclusive delay)
+Expression = "cos(s2*s3) - sin(s2/s3)"
+
+
+# ===============================================================================
+[[ME]] # Mathematical Expression
+Id = "s5"
+Export = true
+Rank = 5
+Delay = 100
+Title = "s5"
+Interval = 1000
+Topic = "raw/m1/s5"
+C = 15.0
+Mean = 0.0
+StdDev = 0.05
+Arguments = ["i"] # i = continous iterator variable (delay included)
+Expression = "4 * ( sin(i/5.0) + sin(2*i/5.0)/2 + sin(5*i/5.0)/7 )"
+
+[[ARMA]] # Auto Regressive Moving Average series
+Id = "s6"
+Rank = 6
+Export = true
+Delay = 100
+Interval = 1000
+Topic = "raw/m1/s6"
+Title = "s6"
+P = [0.1, 0.05, 0.01]
+Q = [0.02, 0.01]
+C = 5.0
+Mean = 0.0
+StdDev = 0.2
+OutlierRatio1s = 0.05
+    [[ARMA.Drivers]]
+    Id = "s5"
+    P = [0.5, 0.35]
+
+[[ARMA]] # Auto Regressive Moving Average series
+Id = "s7"
+Rank = 7
+Export = true
+Delay = 100
+Interval = 1000
+Topic = "raw/m1/s7"
+Title = "s7"
+P = [0.1, 0.05, 0.01]
+Q = [0.02, 0.01]
+C = 5.0
+Mean = 0.0
+StdDev = 0.2
+OutlierRatio2s = 0.05
+    [[ARMA.Drivers]]
+    Id = "s5"
+    P = [0.5, 0.25, -0.15]
+
+
+[[ME]] # Mathematical Expression
+Id = "s8"
+Export = true
+Rank = 8
+Delay = 100
+Title = "s8"
+Topic = "raw/m1/s8"
+Interval = 1000
+C = 5.0
+Mean = 0.0
+StdDev = 0.2
+Arguments = ["s6", "s7"] # i = continous iterator variable (inclusive delay)
+Expression = "cos(s6*s7) - sin(s6/s7)"
+
+
+# ===============================================================================
+[[ME]] # Mathematical Expression
+Id = "s9"
+Export = true
+Rank = 9
+Delay = 100
+Title = "s9"
+Interval = 1000
+Topic = "raw/m1/s9"
+C = 15.0
+Mean = 0.0
+StdDev = 0.05
+Arguments = ["i"] # i = continous iterator variable (delay included)
+Expression = "4 * ( sin(i/5.0) + sin(2*i/5.0)/2 + sin(5*i/5.0)/7 )"
+
+[[ARMA]] # Auto Regressive Moving Average series
+Id = "s10"
+Rank = 10
+Export = true
+Delay = 100
+Interval = 1000
+Topic = "raw/m1/s10"
+Title = "s10"
+P = [0.1, 0.05, 0.01]
+Q = [0.02, 0.01]
+C = 5.0
+Mean = 0.0
+StdDev = 0.2
+OutlierRatio1s = 0.05
+    [[ARMA.Drivers]]
+    Id = "s9"
+    P = [0.5, 0.35]
+
+[[ARMA]] # Auto Regressive Moving Average series
+Id = "s11"
+Rank = 11
+Export = true
+Delay = 100
+Interval = 1000
+Topic = "raw/m1/s11"
+Title = "s11"
+P = [0.1, 0.05, 0.01]
+Q = [0.02, 0.01]
+C = 5.0
+Mean = 0.0
+StdDev = 0.2
+OutlierRatio2s = 0.05
+    [[ARMA.Drivers]]
+    Id = "s9"
+    P = [0.5, 0.25, -0.15]
+
+
+[[ME]] # Mathematical Expression
+Id = "s12"
+Export = true
+Rank = 12
+Delay = 100
+Title = "s12"
+Topic = "raw/m1/s12"
+Interval = 1000
+C = 5.0
+Mean = 0.0
+StdDev = 0.2
+Arguments = ["s10", "s11"] # i = continous iterator variable (inclusive delay)
+Expression = "cos(s10*s11) - sin(s10/s11)"
+
+
+# ===============================================================================
+[[ME]] # Mathematical Expression
+Id = "s13"
+Export = true
+Rank = 13
+Delay = 100
+Title = "s13"
+Interval = 1000
+Topic = "raw/m1/s13"
+C = 15.0
+Mean = 0.0
+StdDev = 0.05
+Arguments = ["i"] # i = continous iterator variable (delay included)
+Expression = "4 * ( sin(i/5.0) + sin(2*i/5.0)/2 + sin(5*i/5.0)/7 )"
+
+[[ARMA]] # Auto Regressive Moving Average series
+Id = "s14"
+Rank = 14
+Export = true
+Delay = 100
+Interval = 1000
+Topic = "raw/m1/s14"
+Title = "s14"
+P = [0.1, 0.05, 0.01]
+Q = [0.02, 0.01]
+C = 5.0
+Mean = 0.0
+StdDev = 0.2
+OutlierRatio1s = 0.05
+    [[ARMA.Drivers]]
+    Id = "s13"
+    P = [0.5, 0.35]
+
+[[ARMA]] # Auto Regressive Moving Average series
+Id = "s15"
+Rank = 15
+Export = true
+Delay = 100
+Interval = 1000
+Topic = "raw/m1/s15"
+Title = "s15"
+P = [0.1, 0.05, 0.01]
+Q = [0.02, 0.01]
+C = 5.0
+Mean = 0.0
+StdDev = 0.2
+OutlierRatio2s = 0.05
+    [[ARMA.Drivers]]
+    Id = "s13"
+    P = [0.5, 0.25, -0.15]
+
+
+[[ME]] # Mathematical Expression
+Id = "s16"
+Export = true
+Rank = 16
+Delay = 100
+Title = "s16"
+Topic = "raw/m1/s16"
+Interval = 1000
+C = 5.0
+Mean = 0.0
+StdDev = 0.2
+Arguments = ["s14", "s15"] # i = continous iterator variable (inclusive delay)
+Expression = "cos(s14*s15) - sin(s14/s15)"
+
+
+# ===============================================================================
+[[ME]] # Mathematical Expression
+Id = "s17"
+Export = true
+Rank = 17
+Delay = 100
+Title = "s17"
+Interval = 1000
+Topic = "raw/m1/s17"
+C = 15.0
+Mean = 0.0
+StdDev = 0.05
+Arguments = ["i"] # i = continous iterator variable (delay included)
+Expression = "4 * ( sin(i/5.0) + sin(2*i/5.0)/2 + sin(5*i/5.0)/7 )"
+
+[[ARMA]] # Auto Regressive Moving Average series
+Id = "s18"
+Rank = 18
+Export = true
+Delay = 100
+Interval = 1000
+Topic = "raw/m1/s18"
+Title = "s18"
+P = [0.1, 0.05, 0.01]
+Q = [0.02, 0.01]
+C = 5.0
+Mean = 0.0
+StdDev = 0.2
+OutlierRatio1s = 0.05
+    [[ARMA.Drivers]]
+    Id = "s17"
+    P = [0.5, 0.35]
+
+[[ARMA]] # Auto Regressive Moving Average series
+Id = "s19"
+Rank = 19
+Export = true
+Delay = 100
+Interval = 1000
+Topic = "raw/m1/s19"
+Title = "s19"
+P = [0.1, 0.05, 0.01]
+Q = [0.02, 0.01]
+C = 5.0
+Mean = 0.0
+StdDev = 0.2
+OutlierRatio2s = 0.05
+    [[ARMA.Drivers]]
+    Id = "s17"
+    P = [0.5, 0.25, -0.15]
+
+
+[[ME]] # Mathematical Expression
+Id = "s20"
+Export = true
+Rank = 20
+Delay = 100
+Title = "s20"
+Topic = "raw/m1/s20"
+Interval = 1000
+C = 5.0
+Mean = 0.0
+StdDev = 0.2
+Arguments = ["s18", "s19"] # i = continous iterator variable (inclusive delay)
+Expression = "cos(s18*s19) - sin(s18/s19)"

@@ -1,0 +1,265 @@
+# Data Stream Generator Configuration
+# ===================================
+
+Id = "plantX"
+Description = "DataStreamGenerator configuration for simulated sensors on a plant"
+Environment = "DEVELOPMENT" # DEVELOPMENT, PRODUCTION
+Seed = -1 # >= 0 means fixed seed
+Shuffle = false # shuffle order of series generation every iteration, otherwise use rank
+Interval = 100 # check interval in ms
+DateTimeFormat = "yyyy-MM-dd-HH-mm-ss-fff"
+StartDateTime = "1000-01-01-00-00-00-000"
+DecimalPrecision = 4
+Duration = 500000 # 500 seconds
+Type = "generate1"
+OutputFilePath = "..\\..\\..\\generateddataset_stablestate.csv" # modify path
+Separator = ";"
+ExportIdAsHeader = true
+ExportDateTime = false
+ExportEventCount = true
+# ExportLags = [1,2,3,4,5,6,7,8,9,10] # number of lags to export for each variable to be exported below
+
+
+
+# Series
+# =====================================
+
+[[IS]]
+Id = "s1"
+Rank = 1
+Export = true
+Delay = 1000
+Interval = 1000
+Title = "s1"
+Min = 1
+Max = 3
+MinLength = 2
+MaxLength = 10
+
+# s0 = 1 (s2, s3, s4 => s5)
+# =====================================
+
+[[MEMC]]
+Id = "s2"
+Rank = 2
+Export = true
+Delay = 1000
+Interval = 1000
+Title = "s2"
+C = 100.0
+Mean = 0.0
+StdDev = 0.0
+Arguments = ["i", # event counter including delay
+            "c", # event counter after delay
+            "s1"]
+Conditions = ["s1==1", "s1==2"]
+Expressions =   [
+                "sin(i/5.0) + sin(2*i/5.0)/2 + sin(5*i/5.0)/7",
+                "sin(i/5.0) + sin(2*i/5.0)/2",
+                "sin(i/5.0) + sin(2*i/5.0)/2"] 
+
+[[MEMC]]
+Id = "s3"
+Rank = 3
+Export = true
+Delay = 1000
+Interval = 1000
+Title = "s3"
+C = 12.0
+Mean = 0.0
+StdDev = 0.0
+Arguments = ["i", "c", "s1"]
+Conditions = ["s1==1", "s1==2"]
+Expressions =   [
+                "cos(i/7.0) + cos(3*i/7.0)/2 + sin(5*i/5.0)/7",
+                "cos(i/7.0) + cos(3*i/7.0)/2",
+                "cos(i/7.0) + cos(3*i/7.0)/2"]
+
+[[MEMC]]
+Id = "s4"
+Rank = 4
+Export = true
+Delay = 1000
+Interval = 1000
+Title = "s4"
+C = 0.0
+Mean = 0.0
+StdDev = 0.0
+Arguments = ["i", "c", "s1"]
+Conditions = ["s1==1", "s1==2"]
+Expressions =   [
+                "cos(i)/4.2+1",
+                "cos(i)/4+1",
+                "cos(i)/4+1"]
+
+[[ME]] 
+Id = "s234"
+Export = true
+Rank = 51
+Delay = 1000
+Title = "s234"
+Interval = 1000
+C = 0.0
+Mean = 0.0 # additive noise term
+StdDev = 0.00 # cf. noise term
+Arguments = ["i", "s2", "s3", "s4"] 
+Expression = "s2 * s3 * cos(s4)" # active power + error term
+
+
+# s0 = 2 (s5, s6, s7 => s567)
+# =====================================
+
+[[MEMC]]
+Id = "s5"
+Rank = 5
+Export = true
+Delay = 1000
+Interval = 1000
+Title = "s5"
+C = 100.0
+Mean = 0.0
+StdDev = 0.0
+Arguments = ["i", # event counter including delay
+            "c", # event counter after delay
+            "s1"]
+Conditions = ["s1==1", "s1==2"]
+Expressions =   [
+                "sin(i/4.0) + sin(2*i/3.0)/2",
+                "sin(i/4.0) + sin(2*i/3.0)/2 + sin(5*i/3.0)/6",
+                "sin(i/4.0) + sin(2*i/3.0)/2"] 
+
+[[MEMC]]
+Id = "s6"
+Rank = 6
+Export = true
+Delay = 1000
+Interval = 1000
+Title = "s6"
+C = 16.0
+Mean = 0.0
+StdDev = 0.0
+Arguments = ["i", "c", "s1"]
+Conditions = ["s1==1", "s1==2"]
+Expressions =   [
+                "cos(i/7.0) + cos(3*i/7.0)/2",
+                "cos(i/7.0) + cos(3*i/7.0)/2 + sin(5*i/5.0)/7",
+                "cos(i/7.0) + cos(3*i/7.0)/2"]
+
+[[MEMC]]
+Id = "s7"
+Rank = 7
+Export = true
+Delay = 1000
+Interval = 1000
+Title = "s7"
+C = 0.0
+Mean = 0.0
+StdDev = 0.0
+Arguments = ["i", "c", "s1"]
+Conditions = ["s1==1", "s1==2"]
+Expressions =   [
+                "cos(i)/4+1",
+                "cos(i)/4.2+1",
+                "cos(i)/4+1"]
+
+[[ME]] 
+Id = "s567"
+Export = true
+Rank = 52
+Delay = 1000
+Title = "s567"
+Interval = 1000
+C = 0.0
+Mean = 0.0 # additive noise term
+StdDev = 0.00 # cf. noise term
+Arguments = ["i", "s5", "s6", "s7"] 
+Expression = "s5 * s6 * cos(s7)" # active power + error term
+
+# s0 = 3 (s8, s9, s10 => s8910)
+# =====================================
+
+[[MEMC]]
+Id = "s8"
+Rank = 8
+Export = true
+Delay = 1000
+Interval = 1000
+Title = "s8"
+C = 80.0
+Mean = 0.0
+StdDev = 0.0
+Arguments = ["i", # event counter including delay
+            "c", # event counter after delay
+            "s1"]
+Conditions = ["s1==1", "s1==2"]
+Expressions =   [
+                "sin(i/4.0) + sin(2*i/3.0)/2",
+                "sin(i/4.0) + sin(2*i/3.0)/2",
+                "sin(i/4.0) + sin(2*i/3.0)/2 + sin(4*i/3.0)/6"] 
+
+[[MEMC]]
+Id = "s9"
+Rank = 9
+Export = true
+Delay = 1000
+Interval = 1000
+Title = "s9"
+C = 12.0
+Mean = 0.0
+StdDev = 0.0
+Arguments = ["i", "c", "s1"]
+Conditions = ["s1==1", "s1==2"]
+Expressions =   [
+                "cos(i/7.0) + cos(3*i/7.0)/2",
+                "cos(i/7.0) + cos(3*i/7.0)/2",
+                "cos(i/7.0) + cos(3*i/7.0)/2 + sin(5*i/5.0)/7"]
+
+[[MEMC]]
+Id = "s10"
+Rank = 10
+Export = true
+Delay = 1000
+Interval = 1000
+Title = "s10"
+C = 0.0
+Mean = 0.0
+StdDev = 0.0
+Arguments = ["i", "c", "s1"]
+Conditions = ["s1==1", "s1==2"]
+Expressions =   [
+                "cos(i)/4+1",
+                "cos(i)/4+1",
+                "cos(i)/4.2+1"]
+
+[[ME]] 
+Id = "s8910"
+Export = true
+Rank = 53
+Delay = 1000
+Title = "s8910"
+Interval = 1000
+C = 0.0
+Mean = 0.0 # additive noise term
+StdDev = 0.00 # cf. noise term
+Arguments = ["i", "s8", "s9", "s10"] 
+Expression = "s8 * s9 * cos(s10)" # active power + error term
+
+
+
+[[MEMC]]
+Id = "s99"
+Rank = 99
+Export = true
+Delay = 1000
+Interval = 1000
+Title = "s99"
+C = 0.0
+Mean = 0.0
+StdDev = 0.0
+Arguments = ["i", "c", "s1", "s234", "s567", "s8910"]
+Conditions = ["s1==1", "s1==2"]
+Expressions =   [
+                "sin(i/5)/4 + cos(3*i/7)/5 + s234",
+                "sin(i/5)/4 + cos(3*i/7)/5 + s567",
+                "sin(i/5)/4 + cos(3*i/7)/5 + s8910"]
+
