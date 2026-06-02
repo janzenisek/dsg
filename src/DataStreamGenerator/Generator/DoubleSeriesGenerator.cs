@@ -133,11 +133,19 @@ namespace DSG {
       TearDown();
     }
 
-    public string GenerateSeriesNextStreamingMessage() {
+    public string GenerateSeriesNextStreamingMessageString() {
       double value = GenerateSeriesNextValue();
 
       string timestamp = time.ToString(generatorConfig.DateTimeFormat);
-      return JsonSerializer.Serialize(GenerateMessage(config, generatorConfig.Group, timestamp, value));
+      var msg = GenerateMessage(config, generatorConfig.Group, timestamp, value);
+      return JsonSerializer.Serialize(msg);      
+    }
+
+    public byte[] GenerateSeriesNextStreamingMessage() {
+      double value = GenerateSeriesNextValue();
+
+      string timestamp = time.ToString(generatorConfig.DateTimeFormat);
+      return JsonSerializer.SerializeToUtf8Bytes(GenerateMessage(config, generatorConfig.Group, timestamp, value));
     }
 
     private Message GenerateMessage(SeriesConfig c, string _group, string _timestamp, double _value) {

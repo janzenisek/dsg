@@ -35,19 +35,19 @@ namespace DSG {
   }
 
   public struct Message {
-    public string id;
-    public string predecessorSource;
-    public string group;
-    public int rank;
-    public string title;
-    public string timestamp;
-    public string systemTimestamp;
-    public double value;
+    public string id { get; set; }
+    public string predecessorSource { get; set; }
+    public string group { get; set; }
+    public int rank { get; set; }
+    public string title { get; set; }
+    public string timestamp { get; set; }
+    public string systemTimestamp { get; set; }
+    public double value { get; set; }
   }
 
   public struct SlimMessage {
-    public string id;
-    public double value;
+    public string id { get; set; }
+    public double value { get; set; }
   }
 
   public abstract class ConstrainedSeries<T> {

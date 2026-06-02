@@ -43,7 +43,8 @@ namespace DSG.Configuration {
       gConfig.ExportLagOffset = config.ContainsKey("ExportLagOffset") ? config.Get<int>("ExportLagOffset") : 0;
       gConfig.ExportLags = config.ContainsKey("ExportLags") ? config.Get<int[]>("ExportLags") : null;
 
-      gConfig.OutputFilePath = Path.GetFullPath(gConfig.OutputFilePath);
+
+      if(!String.IsNullOrEmpty(gConfig.OutputFilePath)) gConfig.OutputFilePath = Path.GetFullPath(gConfig.OutputFilePath);
 
       if (gConfig.Seed >= 0) gConfig.Rnd = new Random(gConfig.Seed);
       else gConfig.Rnd = new Random();

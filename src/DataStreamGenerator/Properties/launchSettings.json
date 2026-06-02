@@ -2,7 +2,7 @@
   "profiles": {
     "DataStreamGenerator": {
       "commandName": "Project",
-      "commandLineArgs": "..\\..\\..\\SampleConfigurations\\DSG_generate_config_ism25_conceptdrifts1.toml"
+      "commandLineArgs": "..\\..\\..\\SampleConfigurations\\new\\DSG_stream_config6.toml"
     }
   }
 }

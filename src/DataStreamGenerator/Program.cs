@@ -1,12 +1,12 @@
 ﻿using DSG.Configuration;
 using DSG.Utils;
 using MQTTnet;
+using MQTTnet.Client;
 using MQTTnet.Extensions.ManagedClient;
 using MQTTnet.Protocol;
 using System.Diagnostics;
 using System.Text;
 using org.mariuszgromada.math.mxparser;
-using MQTTnet.Client;
 
 namespace DSG {
   public class Program {
@@ -16,8 +16,8 @@ namespace DSG {
     const string TYPE_GENERATE_EVENTCOUNTBASED = "generate2";
 
     static void Main(string[] args) {
-      Console.WriteLine("DataStreamGenerator v0.1");
-      Console.WriteLine("------------------------\n");
+      Console.WriteLine("DataStreamGenerator");
+      Console.WriteLine("-------------------\n");
 
       var configFiles = new List<string>();
       if (args.Length > 0) {
@@ -204,32 +204,40 @@ namespace DSG {
       int interval = generatorConfig.Interval;
       
       var client = new MqttFactory().CreateManagedMqttClient();
+
       try {
         var options = new MqttClientOptionsBuilder()
-          .WithClientId(Guid.NewGuid().ToString())
-          .WithWebSocketServer("ws://127.0.0.1:5000/mqtt")
+          .WithClientId(Guid.NewGuid().ToString())          
+          .WithProtocolVersion(MQTTnet.Formatter.MqttProtocolVersion.V500)          
+          //.WithWebSocketServer("ws://127.0.0.1:5000/mqtt")
           .WithTcpServer(generatorConfig.BrokerHostName, generatorConfig.BrokerHostPort)
-          .WithCleanSession(true);
+          .WithCleanSession(true)
+          ;
         var mgOptions = new ManagedMqttClientOptionsBuilder()
           .WithAutoReconnectDelay(TimeSpan.FromSeconds(10))
           .WithClientOptions(options.Build())
           .Build();
 
         client.StartAsync(mgOptions).Wait(token);
-        Thread.Sleep(500);
+        Thread.Sleep(200);
 
         while (internalTime < endTime && !token.IsCancellationRequested) {
           // generate and publish next messages
           if (generatorConfig.Shuffle) generators = generators.Shuffle(generatorConfig.Rnd);
           foreach (var generator in generators) {
             if (generator.Time <= internalTime) {
-              string msg = generator.GenerateSeriesNextStreamingMessage();
+              string msg = generator.GenerateSeriesNextStreamingMessageString();
+              //var msg = generator.GenerateSeriesNextStreamingMessage();
               if (generator.config.Export) {
+
                 var appMessage = new MqttApplicationMessageBuilder()
                   .WithTopic(generator.config.Topic)
+                  .WithResponseTopic(generator.config.Topic)
                   .WithPayload(Encoding.UTF8.GetBytes(msg))
+                  //.WithPayload(msg)
                   .WithQualityOfServiceLevel(MQTTnet.Protocol.MqttQualityOfServiceLevel.ExactlyOnce)
-                  .Build();
+                  .Build();                
+
                 var mappMessage = new ManagedMqttApplicationMessageBuilder()
                   .WithApplicationMessage(appMessage)
                   .Build();
