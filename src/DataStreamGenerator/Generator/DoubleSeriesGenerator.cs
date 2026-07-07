@@ -116,8 +116,8 @@ namespace DSG {
           xt = GenerateOutlier(rnd, xt, series.X, 2);
         }
 
-        string timestamp = time.ToString(generatorConfig.DateTimeFormat);
-        string msg = JsonSerializer.Serialize(GenerateMessage(c, generatorConfig.Group, timestamp, xt));
+        string timestamp = time.ToString(generatorConfig.DateTimeFormat); 
+        string msg = JsonSerializer.Serialize(GenerateMessage(c, generatorConfig.Group, timestamp, xt), new JsonSerializerOptions { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals });
         var message = new MqttApplicationMessageBuilder()
           .WithTopic(config.Topic)
           .WithPayload(Encoding.UTF8.GetBytes(msg))
@@ -138,7 +138,7 @@ namespace DSG {
 
       string timestamp = time.ToString(generatorConfig.DateTimeFormat);
       var msg = GenerateMessage(config, generatorConfig.Group, timestamp, value);
-      return JsonSerializer.Serialize(msg);      
+      return JsonSerializer.Serialize(msg, new JsonSerializerOptions { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals });      
     }
 
     public byte[] GenerateSeriesNextStreamingMessage() {
