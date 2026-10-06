@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.4.33205.214
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataStreamGenerator", "DataStreamGenerator\DataStreamGenerator.csproj", "{443B6E55-835E-4A6D-85CF-A67222E90F89}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataStreamGenerator.Console", "DataStreamGenerator.Console\DataStreamGenerator.Console.csproj", "{443B6E55-835E-4A6D-85CF-A67222E90F89}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

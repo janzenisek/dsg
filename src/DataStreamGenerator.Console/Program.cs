@@ -16,7 +16,7 @@ namespace DSG {
     const string TYPE_GENERATE_EVENTCOUNTBASED = "generate2";
 
     static void Main(string[] args) {
-      Console.WriteLine("DataStreamGenerator");
+      Console.WriteLine("DataStreamGenerator.Console");
       Console.WriteLine("-------------------\n");
 
       var configFiles = new List<string>();
