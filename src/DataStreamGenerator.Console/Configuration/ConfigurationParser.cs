@@ -1,4 +1,5 @@
-﻿using Nett;
+﻿using DSG.DataStreamGenerator.Configuration;
+using Nett;
 using org.mariuszgromada.math.mxparser;
 using System.Globalization;
 
@@ -7,10 +8,8 @@ namespace DSG.Configuration {
   public class ConfigurationParser {
 
     public static DateTime DEFAULT_DATETIME = new DateTime(1, 1, 1, 0, 0, 0, 0);
-    public const string ENV_DEVELOPMENT = "DEVELOPMENT";
-    public const string ENV_PRODUCTION = "PRODUCTION";
 
-    public static GeneratorConfig GetGeneratorConfig(string tomlFile) {
+    public static GeneratorConfig? GetGeneratorConfig(string tomlFile) {
       TomlTable config = Toml.ReadFile(tomlFile);
       if (!config.ContainsKey("Id")) return null;
       else if (!config.ContainsKey("Type")) throw new MissingFieldException("Please provide a type in the generator configuration.");
@@ -19,7 +18,7 @@ namespace DSG.Configuration {
       gConfig.Id = config.Get<String>("Id");
       gConfig.Type = config.Get<String>("Type");
       gConfig.Description = config.ContainsKey("Description") ? config.Get<String>("Description") : null;
-      gConfig.Environment = config.ContainsKey("Environment") ? config.Get<String>("Environment") : ENV_DEVELOPMENT;
+      gConfig.Environment = config.ContainsKey("Environment") ? config.Get<String>("Environment") : GeneratorConfig.ENV_DEVELOPMENT;
       gConfig.DateTimeFormat = config.ContainsKey("DateTimeFormat") ? config.Get<String>("DateTimeFormat") : null;
       gConfig.StartDateTime = config.ContainsKey("StartDateTime") ? ParseDateTime(config.Get<String>("StartDateTime"), gConfig.DateTimeFormat) : DEFAULT_DATETIME;
       gConfig.Seed = config.ContainsKey("Seed") ? config.Get<int>("Seed") : -1;
@@ -44,18 +43,7 @@ namespace DSG.Configuration {
       gConfig.ExportLags = config.ContainsKey("ExportLags") ? config.Get<int[]>("ExportLags") : null;
 
 
-      if(!String.IsNullOrEmpty(gConfig.OutputFilePath)) gConfig.OutputFilePath = Path.GetFullPath(gConfig.OutputFilePath);
-
-      if (gConfig.Seed >= 0) gConfig.Rnd = new Random(gConfig.Seed);
-      else gConfig.Rnd = new Random();
-
-      if (gConfig.Environment.ToUpper() == ENV_DEVELOPMENT) {
-        Random groupNameRnd = new Random();
-        gConfig.Group = gConfig.Id + "_" + groupNameRnd.Next(1, 10000);
-      }
-      else if (gConfig.Environment.ToUpper() == ENV_PRODUCTION) {
-        gConfig.Group = gConfig.Id;
-      }
+      gConfig.EnsureInitialized();
 
       return gConfig;
     }
@@ -111,7 +99,7 @@ namespace DSG.Configuration {
       return seriesConfigs;
     }
 
-    public static DateTime ParseDateTime(string dt, string format) {
+    public static DateTime ParseDateTime(string dt, string? format) {
       if (string.IsNullOrWhiteSpace(dt) || string.IsNullOrWhiteSpace(format)) return new DateTime(1, 1, 1, 0, 0, 0, 0);
       var ci = new CultureInfo("en-US");
       return DateTime.ParseExact(dt, format, ci);

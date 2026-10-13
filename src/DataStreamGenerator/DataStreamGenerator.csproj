@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="MathParser.org-mXparser" Version="6.1.0" />
+        <PackageReference Include="MQTTnet" Version="4.3.7.1207" />
+        <PackageReference Include="MQTTnet.Extensions.ManagedClient" Version="4.3.7.1207" />
+    </ItemGroup>
+
+</Project>

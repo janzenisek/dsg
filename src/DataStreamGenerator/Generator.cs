@@ -1,5 +1,5 @@
-﻿namespace DSG {
-  public abstract class Generator {
+namespace DSG.DataStreamGenerator {
+  internal abstract class Generator {
 
     public void WriteToStream(Dictionary<string, List<double>> data, StreamWriter sw, string separator, int precision, int eventCount) {
       var keys = data.Keys.ToList();

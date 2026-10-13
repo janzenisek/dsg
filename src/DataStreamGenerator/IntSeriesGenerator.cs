@@ -1,5 +1,5 @@
-﻿using DSG.Configuration;
-using DSG.Utils;
+﻿using DSG.DataStreamGenerator.Configuration;
+using DSG.DataStreamGenerator.Utils;
 using MQTTnet.Extensions.ManagedClient;
 using System;
 using System.Collections.Generic;
@@ -8,8 +8,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DSG {
-  public class IntSeriesGenerator {
+namespace DSG.DataStreamGenerator {
+  internal class IntSeriesGenerator {
 
     public const double MAX_BUFFER_SIZE = 500;
     public const string ID_TIMEELAPSED = "t";

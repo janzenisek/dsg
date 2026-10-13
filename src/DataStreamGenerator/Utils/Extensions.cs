@@ -1,6 +1,6 @@
-﻿namespace DSG.Utils {
+namespace DSG.DataStreamGenerator.Utils {
 
-  public static class ExtensionMethods {
+  internal static class ExtensionMethods {
     public static double NextGaussian_BoxMuller(this Random rnd, double mean = 0.0, double stdDev = 1.0) {
       double u1 = rnd.NextDouble(); // uniform(0,1) random doubles
       double u2 = rnd.NextDouble();
@@ -62,7 +62,7 @@
     }
   }
 
-  public static class EnumerableExtensions {
+  internal static class EnumerableExtensions {
     public static IEnumerable<T> Shuffle<T>(this IEnumerable<T> source) {
       return source.Shuffle(new Random());
     }

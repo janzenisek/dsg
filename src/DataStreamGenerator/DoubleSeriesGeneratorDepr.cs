@@ -1,15 +1,14 @@
-﻿using DSG.Configuration;
-using DSG.Utils;
+﻿using DSG.DataStreamGenerator.Configuration;
+using DSG.DataStreamGenerator.Utils;
 using MQTTnet;
 using MQTTnet.Client;
 using MQTTnet.Extensions.ManagedClient;
 using org.mariuszgromada.math.mxparser;
-using System.Globalization;
 using System.Text;
 using System.Text.Json;
 
-namespace DSG {
-  public class DoubleSeriesGenerator {
+namespace DSG.DataStreamGenerator {
+  internal class DoubleSeriesGeneratorDepr : Generator {
 
     public const double MAX_BUFFER_SIZE = 500;
     public const string ID_TIMEELAPSED = "t";
@@ -17,18 +16,14 @@ namespace DSG {
     public const string ID_EVENTITERATOR = "i";
     public const char TIMELAG_SEPARATOR = '_';
     public const char CSV_SEPARATOR = ';';
-    public CultureInfo provider;
-    public CancellationTokenSource cts;
-
 
     private DoubleSeries series;
     public SeriesConfig config;
     private Dictionary<string, DoubleSeries> seriesDict;
-    private Dictionary<string, SeriesConfig> configDict;
 
     private GeneratorConfig generatorConfig;
-    private IManagedMqttClient client;
     private Random rnd;
+    private IManagedMqttClient client;
 
     private DateTime time;
     public DateTime Time {
@@ -48,25 +43,19 @@ namespace DSG {
     private bool driversActive;
     private bool initialized;
 
-    public DoubleSeriesGenerator(GeneratorConfig generatorConfig, Dictionary<string, DoubleSeries> seriesDict, DoubleSeries series, SeriesConfig config, Dictionary<string, SeriesConfig> configDict) {
-      provider = CultureInfo.InvariantCulture;
+    public DoubleSeriesGeneratorDepr(GeneratorConfig generatorConfig, Dictionary<string, DoubleSeries> seriesDict, DoubleSeries series, SeriesConfig config) {
       initialized = false;
-      cts = new CancellationTokenSource();
 
       this.generatorConfig = generatorConfig;
       this.rnd = generatorConfig.Rnd;
       this.seriesDict = seriesDict;
       this.series = series;
       this.config = config;
-      this.configDict = configDict;
-      this.count = series.X.Count;
-      this.iter = series.X.Count;
-      //this.count = 0;
-      //this.iter = 0;
+      this.count = 0;
+      this.iter = 0;
 
       WarmUp();
     }
-
 
     public void WarmUp() {
       dynamic c = config;
@@ -74,14 +63,13 @@ namespace DSG {
       for (int i = 0; i < config.Delay; i++) {
         GenerateSeriesNextValue();
       }
-      SetTimeAndCount(generatorConfig.StartDateTime, 1);
+      SetTimeAndCount(generatorConfig.StartDateTime, 0);
       driversActive = true;
     }
 
     public void TearDown() {
-      if (client != null) {        
-        client.StopAsync().Wait(cts.Token);
-        cts.Cancel();
+      if (client != null) {
+        client.StopAsync().Wait();
         client.Dispose();
         client = null;
       }
@@ -110,19 +98,22 @@ namespace DSG {
 
         double outlierCandidate = rnd.NextDouble();
         if (outlierCandidate < c.OutlierRatio2s) {
-          xt = GenerateOutlier(rnd, xt, series.X, 3);
-        }
-        else if (outlierCandidate < c.OutlierRatio1s) {
           xt = GenerateOutlier(rnd, xt, series.X, 2);
         }
+        else if (outlierCandidate < c.OutlierRatio1s) {
+          xt = GenerateOutlier(rnd, xt, series.X, 1);
+        }
 
-        string timestamp = time.ToString(generatorConfig.DateTimeFormat); 
-        string msg = JsonSerializer.Serialize(GenerateMessage(c, generatorConfig.Group, timestamp, xt), new JsonSerializerOptions { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals });
+        string timestamp = time.ToString(generatorConfig.DateTimeFormat);
+        string msg = JsonSerializer.Serialize(GenerateMessage(c, generatorConfig.Group, timestamp, xt));
+
         var message = new MqttApplicationMessageBuilder()
           .WithTopic(config.Topic)
           .WithPayload(Encoding.UTF8.GetBytes(msg))
           .Build();
-        var task = job.Client.EnqueueAsync(message);        
+        var task = job.Client.EnqueueAsync(message);
+        //task.Wait(); 
+
         Thread.Sleep(config.Interval);
 
         // increase count and time
@@ -133,19 +124,12 @@ namespace DSG {
       TearDown();
     }
 
-    public string GenerateSeriesNextStreamingMessageString() {
+    public string GenerateSeriesNextStreamingMessage() {
       double value = GenerateSeriesNextValue();
 
       string timestamp = time.ToString(generatorConfig.DateTimeFormat);
-      var msg = GenerateMessage(config, generatorConfig.Group, timestamp, value);
-      return JsonSerializer.Serialize(msg, new JsonSerializerOptions { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals });      
-    }
 
-    public byte[] GenerateSeriesNextStreamingMessage() {
-      double value = GenerateSeriesNextValue();
-
-      string timestamp = time.ToString(generatorConfig.DateTimeFormat);
-      return JsonSerializer.SerializeToUtf8Bytes(GenerateMessage(config, generatorConfig.Group, timestamp, value));
+      return JsonSerializer.Serialize(GenerateMessage(config, generatorConfig.Group, timestamp, value));
     }
 
     private Message GenerateMessage(SeriesConfig c, string _group, string _timestamp, double _value) {
@@ -156,7 +140,6 @@ namespace DSG {
         rank = c.Rank,
         title = c.Title,
         timestamp = _timestamp,
-        systemTimestamp = DateTime.Now.ToString(generatorConfig.DateTimeFormat, provider),
         value = _value
       };
     }
@@ -172,10 +155,10 @@ namespace DSG {
         // calculate possible outlier
         double outlierCandidate = rnd.NextDouble();
         if (outlierCandidate < c.OutlierRatio2s) {
-          xt = GenerateOutlier(rnd, xt, series.X, 3);
+          xt = GenerateOutlier(rnd, xt, series.X, 2);
         }
         else if (outlierCandidate < c.OutlierRatio1s) {
-          xt = GenerateOutlier(rnd, xt, series.X, 2);
+          xt = GenerateOutlier(rnd, xt, series.X, 1);
         }
 
         // increase iterator, count and time
@@ -280,7 +263,7 @@ namespace DSG {
         s.D.Add(dt);
       }
 
-      // I
+      // I      
       var i_part = ComputeIntegral(s.D.TakeLast(c.I + 1).ToList());
 
       // Drivers
@@ -482,40 +465,14 @@ namespace DSG {
 
         client.ApplicationMessageReceivedAsync += Client_ApplicationMessageReceivedAsync;
 
+        //client = new MqttClient(c.SourceBroker);
+        //client.Connect(Guid.NewGuid().ToString());
+        //client.Subscribe(new string[] { c.SourceTopic }, new byte[] { MqttMsgBase.QOS_LEVEL_AT_LEAST_ONCE });
+        //client.MqttMsgPublishReceived += Client_MqttMsgPublishReceived;
       }
 
       double xt = 0.0;
       if (series.X.Count > 0) xt = series.X[series.X.Count - 1];
-      return xt;
-    }
-
-    private double ComputeNextX(Random rnd, DoubleSeries s, IntSeqSeriesConfig c) {
-      double xt = double.NaN;
-
-      int i = 0;
-      int x_Count = s.X.Count;
-      double cur = double.NaN;
-
-      // determine current sequence length i
-      for(; i < s.X.Count; i++) {
-        var next = s.X[x_Count - 1 - i];
-        if (double.IsNaN(cur)) cur = next;
-        else if (cur == next) continue;
-        else break;
-      }
-
-      if (double.IsNaN(cur)) xt = rnd.Next(c.Min, c.Max + 1);
-      else if (i < c.MinLength) xt = cur;
-      else if (i == c.MaxLength) do { xt = rnd.Next(c.Min, c.Max + 1); } while (xt == cur);
-      else if (i < c.MaxLength && rnd.NextDouble() < 0.3) do { xt = rnd.Next(c.Min, c.Max + 1); } while (xt == cur);
-      else xt = cur;
-
-        lock (seriesDict) {
-          if (s.X.Count >= MAX_BUFFER_SIZE)
-            s.X.RemoveAt(0);
-          s.X.Add(xt);
-        }
-
       return xt;
     }
 
@@ -559,12 +516,6 @@ namespace DSG {
       }
       else if (seriesDict.ContainsKey(id) && seriesDict[id].X.Count > 0) {
         var seq = seriesDict[id].X;
-
-
-        var seqRank = configDict[id].Rank;
-        var seqInterval = configDict[id].Interval;
-        //if (config.Interval == seqInterval && config.Rank > seqRank) timelag++; // TODO
-
         int idx = seq.Count - 1 - timelag;
         idx = (idx >= 0) ? idx : 0;
         return (seq.Count - 1 >= idx) ? seq.ElementAt(idx) : 0;
@@ -576,11 +527,11 @@ namespace DSG {
 
     private double GenerateOutlier(Random rnd, double xt, List<double> series, double f1) {
       double outlier = xt;
-      double stdDev = ComputeStdDev(series.TakeLast(5).ToList());
+      double stdDev = ComputeStdDev(series);
       bool up = series[series.Count - 1] - series[series.Count - 2] >= 0;
       //bool up = rnd.NextDouble() >= 0.5;
 
-      double off = f1 * stdDev + Math.Abs(rnd.NextGaussian_BoxMuller(0.0, stdDev));
+      double off = f1 * stdDev + Math.Abs(rnd.NextGaussian_BoxMuller(0.0, stdDev / 2.0));
       if (up) outlier += off;
       else outlier -= off;
 
@@ -619,12 +570,12 @@ namespace DSG {
       foreach (var arg in arguments) {
         int timelagIdx = arg.IndexOf(TIMELAG_SEPARATOR);
         if (timelagIdx == -1) {
-          args.Add(ConfigurationParser.ParseArgument(arg, GetValueFromSeries(arg, 0)));
+          args.Add(ExpressionHelper.ParseArgument(arg, GetValueFromSeries(arg, 0)));
         }
         else {
           string varId = arg.Substring(0, timelagIdx);
           if (int.TryParse(arg.Substring(timelagIdx + 1, arg.Length - (timelagIdx + 1)), out int varTimelag)) {
-            args.Add(ConfigurationParser.ParseArgument(arg, GetValueFromSeries(varId, varTimelag)));
+            args.Add(ExpressionHelper.ParseArgument(arg, GetValueFromSeries(varId, varTimelag)));
           }
           else {
             throw new InvalidCastException($"Error at parsing timelag for argument {arg}");
@@ -720,6 +671,5 @@ namespace DSG {
       return fa + fb / 2.0;
     }
     #endregion general helper
-
   }
 }

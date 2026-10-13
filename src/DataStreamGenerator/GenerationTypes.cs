@@ -1,15 +1,13 @@
-﻿using MQTTnet;
-using MQTTnet.Client;
 using MQTTnet.Extensions.ManagedClient;
 
-namespace DSG {
+namespace DSG.DataStreamGenerator {
 
-  public struct StreamingJob {
+  internal struct StreamingJob {
     public IManagedMqttClient Client { get; set; }
     public CancellationToken Token { get; set; }
   }
 
-  public class DoubleSeries {
+  internal class DoubleSeries {
     public List<double> X { get; set; } // generated values
     public List<double> E { get; set; } // error terms (ARMA, ARIMA)
     public List<double> D { get; set; } // derivatives (ARIMA)
@@ -17,14 +15,14 @@ namespace DSG {
 
     public DoubleSeries(double init) {
       X = new List<double>();
-      if(init != double.NaN) X.Add(init);      
+      if(init != double.NaN) X.Add(init);
       E = new List<double>();
       D = new List<double>();
       S = new List<double>();
     }
   }
 
-  public class IntSeries {
+  internal class IntSeries {
     public List<int> X { get; set; }
     public List<int> S { get; set; }
 
@@ -34,7 +32,7 @@ namespace DSG {
     }
   }
 
-  public struct Message {
+  internal struct Message {
     public string id { get; set; }
     public string predecessorSource { get; set; }
     public string group { get; set; }
@@ -45,12 +43,12 @@ namespace DSG {
     public double value { get; set; }
   }
 
-  public struct SlimMessage {
+  internal struct SlimMessage {
     public string id { get; set; }
     public double value { get; set; }
   }
 
-  public abstract class ConstrainedSeries<T> {
+  internal abstract class ConstrainedSeries<T> {
     public SortedList<DateTime, T> Buffer { get; set; }
     public int BufferSize { get; set; }
 
@@ -62,7 +60,7 @@ namespace DSG {
     public abstract void Push(DateTime timestamp, T item);
   }
 
-  public class TimeConstrainedSeries<T> : ConstrainedSeries<T> {
+  internal class TimeConstrainedSeries<T> : ConstrainedSeries<T> {
 
     public TimeConstrainedSeries(int bufferSize) : base(bufferSize) {
     }
@@ -77,7 +75,7 @@ namespace DSG {
     }
   }
 
-  public class CapacityConstrainedSeries<T> : ConstrainedSeries<T> {
+  internal class CapacityConstrainedSeries<T> : ConstrainedSeries<T> {
 
     public CapacityConstrainedSeries(int bufferSize) : base(bufferSize) {
     }

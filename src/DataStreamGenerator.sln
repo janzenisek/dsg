@@ -5,6 +5,8 @@ VisualStudioVersion = 17.4.33205.214
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataStreamGenerator.Console", "DataStreamGenerator.Console\DataStreamGenerator.Console.csproj", "{443B6E55-835E-4A6D-85CF-A67222E90F89}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataStreamGenerator", "DataStreamGenerator\DataStreamGenerator.csproj", "{682874CC-3396-452A-A0F6-D4CFD42524FC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
