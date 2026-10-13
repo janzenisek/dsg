@@ -1,0 +1,35 @@
+name: Publish NuGet package
+
+on:
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore src/DataStreamGenerator/DataStreamGenerator.csproj
+
+      - name: Build
+        run: dotnet build src/DataStreamGenerator/DataStreamGenerator.csproj --configuration Release --no-restore
+
+      - name: Read package version from .csproj
+        id: version
+        run: echo "package_version=$(dotnet msbuild src/DataStreamGenerator/DataStreamGenerator.csproj -getProperty:PackageVersion)" >> "$GITHUB_OUTPUT"
+
+      - name: Pack
+        run: dotnet pack src/DataStreamGenerator/DataStreamGenerator.csproj --configuration Release --no-build --output ./artifacts
+
+      - name: Push to nuget.org
+        run: dotnet nuget push "./artifacts/DataStreamGenerator.${{ steps.version.outputs.package_version }}.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
