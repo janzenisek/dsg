@@ -1,77 +1,35 @@
-﻿using DSG.Configuration;
-using DSG.Utils;
+using DSG.DataStreamGenerator.Configuration;
+using DSG.DataStreamGenerator.Utils;
 using MQTTnet;
 using MQTTnet.Client;
 using MQTTnet.Extensions.ManagedClient;
-using MQTTnet.Protocol;
 using System.Diagnostics;
 using System.Text;
-using org.mariuszgromada.math.mxparser;
 
-namespace DSG {
-  public class Program {
-    const string TYPE_STREAM_DATETIMEBASED_SINGLETHREADED = "stream1";
-    const string TYPE_STREAM_DATETIMEBASED_MULTITASKED = "stream2";
-    const string TYPE_GENERATE_DATETIMEBASED = "generate1";
-    const string TYPE_GENERATE_EVENTCOUNTBASED = "generate2";
+namespace DSG.DataStreamGenerator {
 
-    static void Main(string[] args) {
-      Console.WriteLine("DataStreamGenerator");
-      Console.WriteLine("-------------------\n");
+  public class DataStreamRunner {
+    public const string TYPE_STREAM_DATETIMEBASED_SINGLETHREADED = "stream1";
+    public const string TYPE_STREAM_DATETIMEBASED_MULTITASKED = "stream2";
+    public const string TYPE_GENERATE_DATETIMEBASED = "generate1";
+    public const string TYPE_GENERATE_EVENTCOUNTBASED = "generate2";
 
-      var configFiles = new List<string>();
-      if (args.Length > 0) {
-        foreach (var path in args) {
-          if (File.Exists(path)) {
-            if (Path.GetExtension(path) == ".toml") {
-              configFiles.Add(path);
-            }
-            else {
-              Console.WriteLine($"Error: {path} does not point to a '.toml' file.");
-            }
-          }
-          else {
-            Console.WriteLine($"Error: {path} does not point to an existent file.");
-          }
-        }
-      }
-      else {
-        Console.WriteLine($"Error: no arguments provided.");
-      }
+    private readonly GeneratorConfig generatorConfig;
+    private readonly IReadOnlyDictionary<string, SeriesConfig> seriesConfigDict;
 
-      License.iConfirmNonCommercialUse("anonymous");
+    public DataStreamRunner(GeneratorConfig generatorConfig, IReadOnlyDictionary<string, SeriesConfig> seriesConfigs) {
+      this.generatorConfig = generatorConfig ?? throw new ArgumentNullException(nameof(generatorConfig));
+      this.seriesConfigDict = seriesConfigs ?? throw new ArgumentNullException(nameof(seriesConfigs));
+      if (string.IsNullOrWhiteSpace(generatorConfig.Type)) throw new ArgumentException("Generator configuration must provide a type.", nameof(generatorConfig));
+      if (seriesConfigs.Count == 0) throw new ArgumentException("At least one series configuration is required.", nameof(seriesConfigs));
+    }
 
-      // parse configuration toml file
-      GeneratorConfig generatorConfig = null;
-      Dictionary<string, SeriesConfig> seriesConfigs = new Dictionary<string, SeriesConfig>();
-      foreach (var file in configFiles) {
-        Console.Write($"Parsing configuration file '{file}': ");
-        if (generatorConfig == null) {
-          generatorConfig = ConfigurationParser.GetGeneratorConfig(file);
-          if (generatorConfig != null) Console.Write("generator configuration, ");
-        }
-        var configs = ConfigurationParser.GetSeriesConfigurations(file);
-        Console.Write($"{configs.Count} series configurations");
-        foreach (var config in configs) {
-          if (!seriesConfigs.ContainsKey(config.Key)) {
-            seriesConfigs.Add(config.Key, config.Value);
-          }
-        }
-        Console.WriteLine();
-      }
-
-      if (generatorConfig == null) {
-        Console.WriteLine("Error: no generator configuration has been parsed.");
-      }
-      else if (seriesConfigs.Count == 0) {
-        Console.WriteLine("Error: no series configurations have been parsed.");
-      }
-
+    public void Run(CancellationToken userCancellationToken = default) {
       string gType = generatorConfig.Type.Trim();
 
       // setup series value dictionary
       var seriesDict = new Dictionary<string, DoubleSeries>();
-      foreach (var sc in seriesConfigs) {
+      foreach (var sc in seriesConfigDict) {
         if (sc.Value.GetType() == typeof(ARSeriesConfig)
           || sc.Value.GetType() == typeof(ARMASeriesConfig)
           || sc.Value.GetType() == typeof(ARIMASeriesConfig)
@@ -90,39 +48,39 @@ namespace DSG {
       // stream or generate
       switch (gType) {
         case TYPE_STREAM_DATETIMEBASED_SINGLETHREADED:
-          StreamSingleThreaded(generatorConfig, seriesDict, seriesConfigs);
+          StreamSingleThreaded(seriesDict, userCancellationToken);
           break;
         case TYPE_STREAM_DATETIMEBASED_MULTITASKED:
-          StreamMultiTasked(generatorConfig, seriesDict, seriesConfigs);
+          StreamMultiTasked(seriesDict, userCancellationToken);
           break;
         case TYPE_GENERATE_EVENTCOUNTBASED:
-          GenerateEventCountBased(generatorConfig, seriesDict, seriesConfigs);
+          GenerateEventCountBased(seriesDict);
           break;
         case TYPE_GENERATE_DATETIMEBASED:
-          GenerateDateTimeBased(generatorConfig, seriesDict, seriesConfigs);
+          GenerateDateTimeBased(seriesDict);
           break;
       }
     }
 
     #region setup and init
-    static IEnumerable<DoubleSeriesGenerator> SetupGenerators(GeneratorConfig generatorConfig, Dictionary<string, DoubleSeries> seriesDict, Dictionary<string, SeriesConfig> configDict) {
+    private IEnumerable<DoubleSeriesGenerator> SetupGenerators(Dictionary<string, DoubleSeries> seriesDict) {
       Console.WriteLine("Setup generators");
       var generators = new List<DoubleSeriesGenerator>();
       foreach (var item in seriesDict) {
-        var generator = new DoubleSeriesGenerator(generatorConfig, seriesDict, item.Value, configDict[item.Key], configDict);
+        var generator = new DoubleSeriesGenerator(generatorConfig, seriesDict, item.Value, seriesConfigDict[item.Key], new Dictionary<string, SeriesConfig>(seriesConfigDict));
         generators.Add(generator);
       }
       return generators.OrderBy(x => x.config.Rank).ToList();
     }
 
     // generate1, stream1 & stream2
-    static void InitializeGeneratorsDateTimeBased(IEnumerable<DoubleSeriesGenerator> generators, GeneratorConfig generatorConfig, Dictionary<string, DoubleSeries> seriesDict, Dictionary<string, SeriesConfig> configDict) {
+    private void InitializeGeneratorsDateTimeBased(IEnumerable<DoubleSeriesGenerator> generators, Dictionary<string, DoubleSeries> seriesDict) {
       DateTime internalTime = generatorConfig.StartDateTime;
       int interval = generatorConfig.Interval;
 
       // initialize series
       Console.WriteLine("Initialize series generation");
-      int maxDelay = configDict.Values.Max(x => x.Delay);
+      int maxDelay = seriesConfigDict.Values.Max(x => x.Delay);
       DateTime delayTime = generatorConfig.StartDateTime.AddMilliseconds(maxDelay * interval);
       while (internalTime <= delayTime) {
         foreach (var generator in generators) {
@@ -140,10 +98,10 @@ namespace DSG {
     }
 
     // generate2
-    static void InitliazeGeneratorsEventCountBased(IEnumerable<DoubleSeriesGenerator> generators, GeneratorConfig generatorConfig, Dictionary<string, DoubleSeries> seriesDict, Dictionary<string, SeriesConfig> configDict) {
+    private void InitializeGeneratorsEventCountBased(IEnumerable<DoubleSeriesGenerator> generators, Dictionary<string, DoubleSeries> seriesDict) {
       // initialize series
       Console.WriteLine("Initialize series generation");
-      int maxDelay = configDict.Values.Max(x => x.Delay);
+      int maxDelay = seriesConfigDict.Values.Max(x => x.Delay);
       for (int i = 0; i < maxDelay; i++) {
         foreach (var generator in generators) {
           generator.GenerateSeriesNextValue();
@@ -154,37 +112,33 @@ namespace DSG {
 
     #region stream
     // stream1
-    static void StreamSingleThreaded(GeneratorConfig generatorConfig, Dictionary<string, DoubleSeries> seriesDict, Dictionary<string, SeriesConfig> configDict) {
-      var tokenSource = new CancellationTokenSource();
+    private void StreamSingleThreaded(Dictionary<string, DoubleSeries> seriesDict, CancellationToken userCancellationToken) {
+      var tokenSource = CancellationTokenSource.CreateLinkedTokenSource(userCancellationToken);
       var token = tokenSource.Token;
 
       // setup and initialize generators
-      var generators = SetupGenerators(generatorConfig, seriesDict, configDict);
-      InitializeGeneratorsDateTimeBased(generators, generatorConfig, seriesDict, configDict);
+      var generators = SetupGenerators(seriesDict);
+      InitializeGeneratorsDateTimeBased(generators, seriesDict);
 
-      // setup and start streaming task
       Console.WriteLine("Setup and start streaming thread");
-      Thread t = new Thread(() => StreamingThread(generatorConfig, generators, token));
+      Thread t = new Thread(() => StreamingThread(generators, token));
       t.Start();
       Console.WriteLine("Streaming task started");
 
       // handle control task
-      string input = null;
       bool completed = false;
       var sw = new Stopwatch();
       sw.Start();
 
       try {
-        do {
-          input = Reader.ReadLine(200);
-          if (sw.ElapsedMilliseconds > generatorConfig.Duration) {
-            completed = true;
-          }
-        } while (input == null && !completed);
+        while (!token.IsCancellationRequested && sw.ElapsedMilliseconds <= generatorConfig.Duration) {
+          Thread.Sleep(200);
+        }
+        completed = !token.IsCancellationRequested;
 
         if (t.ThreadState != System.Threading.ThreadState.Stopped) {
           tokenSource.Cancel();
-          if (!t.Join(5000)) t.Abort();
+          if (!t.Join(5000)) t.Join(5000);
         }
 
         if (completed) Console.WriteLine("\nThe generator's runtime is over. The generator rests now.");
@@ -198,17 +152,17 @@ namespace DSG {
       }
     }
 
-    private static void StreamingThread(GeneratorConfig generatorConfig, IEnumerable<DoubleSeriesGenerator> generators, CancellationToken token) {
+    private void StreamingThread(IEnumerable<DoubleSeriesGenerator> generators, CancellationToken token) {
       DateTime internalTime = generatorConfig.StartDateTime;
       DateTime endTime = generatorConfig.StartDateTime.AddMilliseconds(generatorConfig.Duration);
       int interval = generatorConfig.Interval;
-      
+
       var client = new MqttFactory().CreateManagedMqttClient();
 
       try {
         var options = new MqttClientOptionsBuilder()
-          .WithClientId(Guid.NewGuid().ToString())          
-          .WithProtocolVersion(MQTTnet.Formatter.MqttProtocolVersion.V500)          
+          .WithClientId(Guid.NewGuid().ToString())
+          .WithProtocolVersion(MQTTnet.Formatter.MqttProtocolVersion.V500)
           //.WithWebSocketServer("ws://127.0.0.1:5000/mqtt")
           .WithTcpServer(generatorConfig.BrokerHostName, generatorConfig.BrokerHostPort)
           .WithCleanSession(true)
@@ -223,7 +177,7 @@ namespace DSG {
 
         while (internalTime < endTime && !token.IsCancellationRequested) {
           // generate and publish next messages
-          if (generatorConfig.Shuffle) generators = generators.Shuffle(generatorConfig.Rnd);
+          if (generatorConfig.Shuffle) generators = generators.Shuffle(generatorConfig.Rnd!);
           foreach (var generator in generators) {
             if (generator.Time <= internalTime) {
               string msg = generator.GenerateSeriesNextStreamingMessageString();
@@ -236,12 +190,12 @@ namespace DSG {
                   .WithPayload(Encoding.UTF8.GetBytes(msg))
                   //.WithPayload(msg)
                   .WithQualityOfServiceLevel(MQTTnet.Protocol.MqttQualityOfServiceLevel.ExactlyOnce)
-                  .Build();                
+                  .Build();
 
                 var mappMessage = new ManagedMqttApplicationMessageBuilder()
                   .WithApplicationMessage(appMessage)
                   .Build();
-                client.EnqueueAsync(mappMessage).Wait(token);                
+                client.EnqueueAsync(mappMessage).Wait(token);
 
               }
             }
@@ -262,21 +216,21 @@ namespace DSG {
         foreach (var generator in generators) {
           generator.TearDown();
         }
-        client.StopAsync().Wait(token);        
+        client.StopAsync().Wait(token);
         client.Dispose();
         client = null;
       }
     }
 
     // stream2
-    static void StreamMultiTasked(GeneratorConfig generatorConfig, Dictionary<string, DoubleSeries> seriesDict, Dictionary<string, SeriesConfig> configDict) {
+    private void StreamMultiTasked(Dictionary<string, DoubleSeries> seriesDict, CancellationToken userCancellationToken) {
       var tasks = new List<Task>();
-      var tokenSource = new CancellationTokenSource();
+      var tokenSource = CancellationTokenSource.CreateLinkedTokenSource(userCancellationToken);
       var token = tokenSource.Token;
 
       // setup and initialize generators
-      var generators = SetupGenerators(generatorConfig, seriesDict, configDict);
-      InitializeGeneratorsDateTimeBased(generators, generatorConfig, seriesDict, configDict);
+      var generators = SetupGenerators(seriesDict);
+      InitializeGeneratorsDateTimeBased(generators, seriesDict);
 
       Console.WriteLine("Convert series configurations to jobs");
       foreach (var generator in generators) {
@@ -310,21 +264,23 @@ namespace DSG {
       }
       Console.WriteLine("All jobs started");
 
-      string input = null;
       bool completed = false;
       var sw = new Stopwatch();
       sw.Start();
 
       try {
-        do {
-          input = Reader.ReadLine(500);
+        while (true) {
+          if (token.IsCancellationRequested) break;
           completed = Task.WaitAll(tasks.ToArray(), 10);
+          if (completed) break;
           if (sw.ElapsedMilliseconds > generatorConfig.Duration) {
             tokenSource.Cancel();
             Task.WaitAll(tasks.ToArray());
             completed = true;
+            break;
           }
-        } while (input == null && !completed);
+          Thread.Sleep(10);
+        }
         if (completed) {
           Console.WriteLine("\nGenerator's runtime is over. The generator calls it a night.");
         }
@@ -344,23 +300,23 @@ namespace DSG {
 
     #region generate
     // generate1
-    static void GenerateDateTimeBased(GeneratorConfig generatorConfig, Dictionary<string, DoubleSeries> seriesDict, Dictionary<string, SeriesConfig> configDict) {
+    private void GenerateDateTimeBased(Dictionary<string, DoubleSeries> seriesDict) {
       Stopwatch watch = new Stopwatch();
       watch.Start();
 
       // setup and initialize generators
-      var generators = SetupGenerators(generatorConfig, seriesDict, configDict);
-      InitializeGeneratorsDateTimeBased(generators, generatorConfig, seriesDict, configDict);
+      var generators = SetupGenerators(seriesDict);
+      InitializeGeneratorsDateTimeBased(generators, seriesDict);
 
       DateTime internalTime = generatorConfig.StartDateTime;
       DateTime endTime = generatorConfig.StartDateTime.AddMilliseconds(generatorConfig.Duration);
       int interval = generatorConfig.Interval;
-      string separator = generatorConfig.Separator;
+      string? separator = generatorConfig.Separator;
       string format = "{0:N" + generatorConfig.DecimalPrecision + "}";
 
       // write to stream
       Console.WriteLine("Generate and write to file stream");
-      using (StreamWriter sw = new StreamWriter(new FileStream(generatorConfig.OutputFilePath, FileMode.Create))) {
+      using (StreamWriter sw = new StreamWriter(new FileStream(generatorConfig.OutputFilePath!, FileMode.Create))) {
         var exports = generators.Where(x => x.config.Export).OrderBy(x => x.config.Rank).ToArray();
         if (generatorConfig.ExportIdAsHeader) {
           if (generatorConfig.ExportDateTime) {
@@ -393,7 +349,7 @@ namespace DSG {
           exportStr = "";
           exportStrParts.Clear();
 
-          if (generatorConfig.Shuffle) generators = generators.Shuffle(generatorConfig.Rnd).ToList();
+          if (generatorConfig.Shuffle) generators = generators.Shuffle(generatorConfig.Rnd!).ToList();
           foreach (var generator in generators) {
             double? value = null;
             if (generator.Time <= internalTime) {
@@ -463,19 +419,19 @@ namespace DSG {
     }
 
     // generate2
-    static void GenerateEventCountBased(GeneratorConfig generatorConfig, Dictionary<string, DoubleSeries> seriesDict, Dictionary<string, SeriesConfig> configDict) {
+    private void GenerateEventCountBased(Dictionary<string, DoubleSeries> seriesDict) {
       Stopwatch watch = new Stopwatch();
       watch.Start();
 
-      var generators = SetupGenerators(generatorConfig, seriesDict, configDict);
-      InitliazeGeneratorsEventCountBased(generators, generatorConfig, seriesDict, configDict);
+      var generators = SetupGenerators(seriesDict);
+      InitializeGeneratorsEventCountBased(generators, seriesDict);
 
-      string separator = generatorConfig.Separator;
+      string? separator = generatorConfig.Separator;
       string format = "{0:N" + generatorConfig.DecimalPrecision + "}";
 
       // write to stream
       Console.WriteLine("Generate and write to file stream");
-      using (StreamWriter sw = new StreamWriter(new FileStream(generatorConfig.OutputFilePath, FileMode.Create))) {
+      using (StreamWriter sw = new StreamWriter(new FileStream(generatorConfig.OutputFilePath!, FileMode.Create))) {
         var exports = generators.Where(x => x.config.Export).OrderBy(x => x.config.Rank).ToArray();
         if (generatorConfig.ExportIdAsHeader) {
           if (generatorConfig.ExportDateTime) {
@@ -508,7 +464,7 @@ namespace DSG {
           exportStr = "";
           exportStrParts.Clear();
 
-          if (generatorConfig.Shuffle) generators = generators.Shuffle(generatorConfig.Rnd);
+          if (generatorConfig.Shuffle) generators = generators.Shuffle(generatorConfig.Rnd!);
           foreach (var generator in generators) {
             double value = generator.GenerateSeriesNextValue();
             if (generator.config.Export) {
@@ -548,14 +504,14 @@ namespace DSG {
     #endregion generate
 
     #region misc
-    static double? ComputeDiff(double? value, double? lastValue) {
+    private static double? ComputeDiff(double? value, double? lastValue) {
       if (value.HasValue && lastValue.HasValue) {
         return value.Value - lastValue.Value;
       }
       return null;
     }
 
-    static double? ComputeDiff(DoubleSeriesGenerator generator, bool fps, int valueIdx) {
+    private static double? ComputeDiff(DoubleSeriesGenerator generator, bool fps, int valueIdx) {
       double? value = generator.GetValuesFromSeries(valueIdx);
       if (!value.HasValue) return null;
       if (!fps) {
@@ -578,7 +534,7 @@ namespace DSG {
       return null;
     }
 
-    static double ComputeMovingAverage(DoubleSeriesGenerator generator, int startIdx, int windowSize) {
+    private static double ComputeMovingAverage(DoubleSeriesGenerator generator, int startIdx, int windowSize) {
       double sum = 0.0;
       for (int i = startIdx; i < (startIdx + windowSize); i++) {
         double? val = generator.GetValuesFromSeries(i);

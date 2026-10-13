@@ -21,7 +21,7 @@
       }
     }
 
-    public static string ReadLine(int timeOutMillisecs = Timeout.Infinite) {
+    public static string? ReadLine(int timeOutMillisecs = Timeout.Infinite) {
       getInput.Set();
       bool success = gotInput.WaitOne(timeOutMillisecs);
       if (success)
