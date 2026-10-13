@@ -4,6 +4,13 @@
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <Title>DataStreamGenerator</Title>
+        <Copyright>Copyright (c) Jan Zenisek 2017-2026.</Copyright>
+        <PackageProjectUrl>https://github.com/janzenisek/dsg</PackageProjectUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <RepositoryUrl>https://github.com/janzenisek/dsg</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <Version>1.0.0</Version>
     </PropertyGroup>
 
     <ItemGroup>
