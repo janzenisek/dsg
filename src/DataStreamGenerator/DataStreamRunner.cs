@@ -216,7 +216,13 @@ namespace DSG.DataStreamGenerator {
         foreach (var generator in generators) {
           generator.TearDown();
         }
-        client.StopAsync().Wait(token);
+        try
+        {
+          client.StopAsync().Wait(TimeSpan.FromSeconds(5));
+        }
+        catch (OperationCanceledException)
+        {
+        }
         client.Dispose();
         client = null;
       }
@@ -255,7 +261,13 @@ namespace DSG.DataStreamGenerator {
             generator.StreamSeries(job);
           }
           finally {
-            client.StopAsync().Wait(token);
+            try
+            {
+              client.StopAsync().Wait(TimeSpan.FromSeconds(5));
+            }
+            catch (OperationCanceledException)
+            {
+            }
             client.Dispose();
             client = null;
           }
