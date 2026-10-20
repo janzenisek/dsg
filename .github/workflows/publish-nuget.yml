@@ -6,8 +6,10 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    environment: production
     permissions:
       contents: read
+      id-token: write
 
     steps:
       - name: Check out repository
@@ -24,12 +26,18 @@ jobs:
       - name: Build
         run: dotnet build src/DataStreamGenerator/DataStreamGenerator.csproj --configuration Release --no-restore
 
-      - name: Read package version from .csproj
+      - name: Read Package Version
         id: version
         run: echo "package_version=$(dotnet msbuild src/DataStreamGenerator/DataStreamGenerator.csproj -getProperty:PackageVersion)" >> "$GITHUB_OUTPUT"
 
       - name: Pack
         run: dotnet pack src/DataStreamGenerator/DataStreamGenerator.csproj --configuration Release --no-build --output ./artifacts
 
-      - name: Push to nuget.org
-        run: dotnet nuget push "./artifacts/DataStreamGenerator.${{ steps.version.outputs.package_version }}.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+      - name: NuGet Login
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
+      - name: NuGet Push
+        run: dotnet nuget push "./artifacts/DataStreamGenerator.${{ steps.version.outputs.package_version }}.nupkg" --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
